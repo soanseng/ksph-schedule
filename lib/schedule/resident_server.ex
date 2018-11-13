@@ -4,6 +4,35 @@ defmodule Schedule.ResidentServer do
   alias Schedule.Repo
   import Ecto.Query
 
+  #api call
+  def get_residents_from_db(min_level, eda \\ 999) do
+    GenServer.cast(__MODULE__, {:get_residents_db, min_level, eda})
+  end
+
+  def get_current_residents() do
+    GenServer.call(__MODULE__, {:get})
+  end
+
+  def reset_residents(default) do
+    GenServer.cast(__MODULE__, {:reset, default})
+  end
+
+  def set_holiday_points(id, max_point, max_holiday) do
+    GenServer.cast(__MODULE__, {:set_holiday_points, id, max_point, max_holiday})
+  end
+
+  def set_reserve(id, weekdays \\ [], reserve_days \\ []) do
+    GenServer.cast(__MODULE__, {:set_reserve, id, weekdays, reserve_days})
+  end
+
+  def update_resident(id, new_data) do
+    GenServer.cast(__MODULE__, {:update, id, new_data})
+  end
+
+
+
+
+  # callback
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end

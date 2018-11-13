@@ -1,6 +1,34 @@
 defmodule Schedule.MonthServer do
   use GenServer
   alias Schedule.Month
+  alias Schedule.Repo
+
+  #api
+  def set_this_month(date, holidays \\ [], be_ordinary \\ [], should_be_removed \\ []) do
+    GenServer.call(__MODULE__, {:set_start, date, holidays, be_ordinary, should_be_removed})
+  end
+
+  def reset_month(default) do
+    GenServer.cast(MonthServer, {:reset, default})
+  end
+
+  def get_current_month() do
+    GenServer.call(__MODULE__, {:get})
+  end
+
+  def update_month(date, new_data) do
+    GenServer.cast(__MODULE__, {:update, date, new_data})
+  end
+
+  def get_specific_date(date) do
+    GenServer.call(__MODULE__, {:get_day, date})
+  end
+
+  def save_to_database() do
+    get_current_month()
+    |> Map.values()
+    |> Enum.each(fn day -> Repo.insert!(day) end)
+  end
 
   # callback
   def start_link(_opts) do

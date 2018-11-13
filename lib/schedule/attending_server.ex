@@ -5,6 +5,47 @@ defmodule Schedule.AttendingServer do
   alias Schedule.Month
   import Ecto.Query
 
+  #api
+  def get_attendings_from_db(min_sheng_id \\ 0) do
+    GenServer.cast(__MODULE__, {:get_attending_db, min_sheng_id})
+  end
+
+  def get_current_attendings() do
+    GenServer.call(__MODULE__, {:get_attending})
+  end
+
+  def set_reserve(
+    id,
+    weekdays_reserve \\ [],
+    reserve_days \\ [],
+    duty_wish \\ [],
+    weekday_wish \\ []
+  ) do
+    GenServer.cast(
+      __MODULE__,
+      {:attending_reserve, id, weekdays_reserve, reserve_days, duty_wish, weekday_wish}
+    )
+  end
+
+  def reset_attendings(default) do
+    GenServer.cast(__MODULE__, {:reset, default})
+  end
+
+  def update_attending(id, new_data) do
+    GenServer.cast(__MODULE__, {:update, id, new_data})
+  end
+
+  def remove_attendings(list_ids) do
+    GenServer.cast(__MODULE__, {:remove, list_ids})
+  end
+
+  def set_max_points(this_month) do
+    GenServer.cast(__MODULE__, {:set_max_points, this_month})
+  end
+
+
+
+  #callback
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
