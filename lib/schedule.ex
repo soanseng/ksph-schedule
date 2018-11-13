@@ -1,21 +1,13 @@
 defmodule Schedule do
   use Application
+  alias Schedule.{MonthServer, ResidentServer, AttendingServer, Repo}
 
   def start(_type, _arges) do
     children = [
-      Schedule.Repo,
-      %{
-        id: MonthServer,
-        start: {Schedule.MonthServer, :start_link, []}
-      },
-      %{
-        id: ResidentServer,
-        start: {Schedule.ResidentServer, :start_link, []}
-      },
-      %{
-        id: AttendingServer,
-        start: {Schedule.AttendingServer, :start_link, []}
-      }
+      Repo,
+      MonthServer,
+      ResidentServer,
+      AttendingServer
     ]
 
     options = [
