@@ -14,7 +14,7 @@ defmodule Schedule.Month do
     |> Interval.with_step(days: 1)
     |> Flow.from_enumerable()
     |> Flow.map(fn date -> {Timex.to_date(date), %Day{date_id: Timex.to_date(date)}} end)
-    |> Flow.filter(fn {date, day} -> !Enum.member?(should_be_removed, date) end)
+    |> Flow.filter(fn {date, _day} -> !Enum.member?(should_be_removed, date) end)
     |> Flow.map(fn {date, day} -> {date, change_points({date, day})} end)
     |> Flow.map(fn {date, day} -> {date, set_holidays({date, day}, holidays)} end)
     |> Flow.map(fn {date, day} -> {date, turn_ordinary({date, day}, be_ordinary)} end)

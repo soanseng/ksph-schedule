@@ -1,9 +1,8 @@
 defmodule Schedule.Calculate do
   alias Schedule.MonthServer
-  alias Schedule.Month
   alias Schedule.ResidentServer
   alias Schedule.AttendingServer
-  alias Schedule.{Repo, Day}
+  alias Schedule.Repo
   use Timex
 
   # month setup
@@ -142,7 +141,7 @@ defmodule Schedule.Calculate do
   def attending_random_holiday(n) do
     get_current_month()
     |> filter_holidays()
-    |> Flow.filter(fn {date, day_value} -> day_value.attending_id == 0 end)
+    |> Flow.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
     |> Enum.each(fn date ->
       seize_holiday(n, date, :attending)
     end)
@@ -155,7 +154,7 @@ defmodule Schedule.Calculate do
   def attending_random_ordinary(n) do
     get_current_month()
     |> filter_ordinary_days()
-    |> Stream.filter(fn {date, day_value} -> day_value.attending_id == 0 end)
+    |> Stream.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
     |> Enum.each(fn date ->
       seize_the_day(n, date, :attending)
     end)
@@ -169,7 +168,7 @@ defmodule Schedule.Calculate do
 
     get_current_attendings()
     |> Flow.from_enumerable()
-    |> Flow.filter(fn {pick_id, person_info} ->
+    |> Flow.filter(fn {_pick_id, person_info} ->
       Enum.any?(person_info.weekday_wish, fn weekday -> weekday == 6 || weekday == 7 end) &&
         person_info.current_point == 0
     end)
@@ -184,7 +183,7 @@ defmodule Schedule.Calculate do
 
     get_current_attendings()
     |> Flow.from_enumerable()
-    |> Flow.filter(fn {pick_id, person_info} ->
+    |> Flow.filter(fn {_pick_id, person_info} ->
       Enum.any?(person_info.weekday_wish, fn weekday -> !(weekday == 6 || weekday == 7) end) &&
         person_info.current_point == 0
     end)
@@ -192,9 +191,9 @@ defmodule Schedule.Calculate do
   end
 
   def set_specific_day() do
-    get_current_attendings
+    get_current_attendings()
     |> Flow.from_enumerable()
-    |> Flow.filter(fn {pick_id, value} -> value.duty_wish != [] end)
+    |> Flow.filter(fn {_pick_id, value} -> value.duty_wish != [] end)
     |> Flow.each(fn {pick_id, person_info} ->
       Flow.each(person_info.duty_wish, fn date ->
         if Map.get(get_current_month(), date).is_holiday do
@@ -212,7 +211,7 @@ defmodule Schedule.Calculate do
         end
 
         new_days = %{
-          Map.get(get_current_month, date)
+          Map.get(get_current_month(), date)
           | attend: person_info.name,
             attending_id: person_info.doctor_id
         }
@@ -439,11 +438,11 @@ defmodule Schedule.Calculate do
   end
 
   def resident_to_json do
-    get_current_residents |> Map.values() |> Poison.encode!()
+    get_current_residents() |> Map.values() |> Poison.encode!()
   end
 
   def attending_to_json do
-    get_current_attendings |> Map.values() |> Poison.encode!()
+    get_current_attendings() |> Map.values() |> Poison.encode!()
   end
 
   # turn into csv

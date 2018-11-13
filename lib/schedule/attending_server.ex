@@ -37,7 +37,7 @@ defmodule Schedule.AttendingServer do
 
   def handle_cast({:remove, list_ids}, people) do
     attendings =
-      Stream.filter(people, fn {key, value} -> !Enum.member?(list_ids, key) end) |> Enum.into(%{})
+      Stream.filter(people, fn {key, _value} -> !Enum.member?(list_ids, key) end) |> Enum.into(%{})
 
     {:noreply, attendings}
   end
@@ -56,7 +56,7 @@ defmodule Schedule.AttendingServer do
 
     adjusted =
       new_people
-      |> Enum.sort_by(fn {key, value} -> value.ranking end)
+      |> Enum.sort_by(fn {_key, value} -> value.ranking end)
       |> Stream.take(extra_point)
       |> Stream.map(fn {key, value} -> {key, %{value | max_point: 1}} end)
       |> Enum.into(%{})
