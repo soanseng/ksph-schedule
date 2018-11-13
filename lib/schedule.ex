@@ -1,4 +1,4 @@
-defmodule Schedule.Application do
+defmodule Schedule do
   use Application
 
   def start(_type, _arges) do
