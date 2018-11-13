@@ -25,3 +25,4 @@ schedule-*.tar
 
 /setup
 /priv/repo/*.exs
+*.csv
