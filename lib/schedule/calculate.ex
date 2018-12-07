@@ -20,6 +20,7 @@ defmodule Schedule.Calculate do
       resident_result(default_month, default_resident, n - 1)
     else
       {:ok, MonthServer.get_current_month()}
+      IO.puts "get resident result!"
     end
   end
 
@@ -40,6 +41,7 @@ defmodule Schedule.Calculate do
       attending_result(default_month, default_attending, n - 1)
     else
       {:ok, MonthServer.get_current_month()}
+      IO.puts "get attending result!"
     end
   end
 
@@ -50,7 +52,7 @@ defmodule Schedule.Calculate do
   def attending_random_holiday(n) do
     MonthServer.get_current_month()
     |> filter_holidays()
-    |> Flow.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
+    |> Enum.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
     |> Enum.each(fn date ->
       seize_holiday(n, date, :attending)
     end)
@@ -63,7 +65,7 @@ defmodule Schedule.Calculate do
   def attending_random_ordinary(n) do
     MonthServer.get_current_month()
     |> filter_ordinary_days()
-    |> Stream.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
+    |> Enum.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
     |> Enum.each(fn date ->
       seize_the_day(n, date, :attending)
     end)
@@ -76,12 +78,11 @@ defmodule Schedule.Calculate do
       |> Enum.map(fn keyword -> elem(keyword, 0) end)
 
     AttendingServer.get_current_attendings()
-    |> Flow.from_enumerable()
-    |> Flow.filter(fn {_pick_id, person_info} ->
+    |> Enum.filter(fn {_pick_id, person_info} ->
       Enum.any?(person_info.weekday_wish, fn weekday -> weekday == 6 || weekday == 7 end) &&
         person_info.current_point == 0
     end)
-    |> Flow.each(fn attending -> loop_to_pick_wish_days(n, attending, filter_days, :holiday) end)
+    |> Enum.each(fn attending -> loop_to_pick_wish_days(n, attending, filter_days, :holiday) end)
   end
 
   def attending_wish_day(n, :normal) do
@@ -91,20 +92,18 @@ defmodule Schedule.Calculate do
       |> Enum.map(fn keyword -> elem(keyword, 0) end)
 
     AttendingServer.get_current_attendings()
-    |> Flow.from_enumerable()
-    |> Flow.filter(fn {_pick_id, person_info} ->
+    |> Enum.filter(fn {_pick_id, person_info} ->
       Enum.any?(person_info.weekday_wish, fn weekday -> !(weekday == 6 || weekday == 7) end) &&
         person_info.current_point == 0
     end)
-    |> Flow.each(fn attending -> loop_to_pick_wish_days(n, attending, filter_days, :normal) end)
+    |> Enum.each(fn attending -> loop_to_pick_wish_days(n, attending, filter_days, :normal) end)
   end
 
   def set_specific_day() do
     AttendingServer.get_current_attendings()
-    |> Flow.from_enumerable()
-    |> Flow.filter(fn {_pick_id, value} -> value.duty_wish != [] end)
-    |> Flow.each(fn {pick_id, person_info} ->
-      Flow.each(person_info.duty_wish, fn date ->
+    |> Enum.filter(fn {_pick_id, value} -> value.duty_wish != [] end)
+    |> Enum.each(fn {pick_id, person_info} ->
+      Enum.each(person_info.duty_wish, fn date ->
         if Map.get(MonthServer.get_current_month(), date).is_holiday do
           AttendingServer.update_attending(pick_id, %{
             person_info
@@ -140,8 +139,7 @@ defmodule Schedule.Calculate do
 
   def set_the_ordinary(n, identity) do
     MonthServer.get_current_month()
-    |> Flow.from_enumerable()
-    |> Flow.filter(fn {_date, value} -> !value.is_holiday end)
+    |> Enum.filter(fn {_date, value} -> !value.is_holiday end)
     |> Enum.each(fn date -> seize_the_day(n, date, identity) end)
   end
 
@@ -283,8 +281,7 @@ defmodule Schedule.Calculate do
   # return keyword list
   defp filter_holidays(month) do
     month
-    |> Flow.from_enumerable()
-    |> Flow.filter(fn {_date, value} -> value.is_holiday end)
+    |> Enum.filter(fn {_date, value} -> value.is_holiday end)
   end
 
   defp filter_ordinary_days(month) do
@@ -293,13 +290,12 @@ defmodule Schedule.Calculate do
 
   defp filter_no_resident_day(month) do
     month
-    |> Flow.from_enumerable()
-    |> Flow.filter(fn {_date, value} -> value.resident_id == 0 end)
+    |> Enum.filter(fn {_date, value} -> value.resident_id == 0 end)
     |> Enum.count()
   end
 
   defp filter_no_attending_day(month) do
-    Stream.filter(month, fn {_date, value} -> value.attending_id == 0 end)
+    Enum.filter(month, fn {_date, value} -> value.attending_id == 0 end)
     |> Enum.count()
   end
 
@@ -339,19 +335,6 @@ defmodule Schedule.Calculate do
     else
       loop_to_pick_wish_days(n - 1, attending, filter_days, holiday?)
     end
-  end
-
-  # turn into Json
-  def result_to_json do
-    MonthServer.get_current_month() |> Map.values() |> Poison.encode!()
-  end
-
-  def resident_to_json do
-    ResidentServer.get_current_residents() |> Map.values() |> Poison.encode!()
-  end
-
-  def attending_to_json do
-    AttendingServer.get_current_attendings() |> Map.values() |> Poison.encode!()
   end
 
   # turn into csv

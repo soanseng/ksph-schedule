@@ -43,6 +43,10 @@ defmodule Schedule.AttendingServer do
     GenServer.cast(__MODULE__, {:set_max_points, this_month})
   end
 
+  def modify_max_points(id, point) do
+    GenServer.cast(__MODULE__, {:modify_max_points, id, point})
+  end
+
 
 
   #callback
@@ -86,6 +90,13 @@ defmodule Schedule.AttendingServer do
   def handle_cast({:reset, default}, people) do
     {:noreply, Map.merge(people, default)}
   end
+
+  def handle_cast({:modify_max_points, id, point}, people) do
+    data = Map.get(people, id)
+    new_data = %{data | max_point: point}
+    {:noreply, Map.put(people, id, new_data )}
+  end
+
 
   def handle_cast({:set_max_points, this_month}, people) do
     extra_point = Enum.count(people) * 2 - Month.all_points(this_month)
