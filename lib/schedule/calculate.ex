@@ -8,37 +8,47 @@ defmodule Schedule.Calculate do
 
   # calculate residents
   def resident_result(_month, _people, 0) do
-    {:error, "there is no result"}
+    raise "there is no resident's result"
   end
 
   def resident_result(default_month, default_resident, n) do
-    if MonthServer.get_current_month() |> filter_no_resident_day() > 0 do
+    if (MonthServer.get_current_month() |> filter_no_resident_day() > 0 )  do
+
+      IO.puts("Now it left #{n} times in residents")
       ResidentServer.reset_residents(default_resident)
       MonthServer.reset_month(default_month)
-      set_the_holiday(n, :resident)
-      set_the_ordinary(n, :resident)
-      resident_result(default_month, default_resident, n - 1)
+      try do
+        set_the_holiday(1_00_000, :resident)
+        set_the_ordinary(1_00_000, :resident)
+      after
+        resident_result(default_month, default_resident, n - 1)
+      end
     else
-      {:ok, MonthServer.get_current_month()}
+      IO.puts("Resident all points are #{ResidentServer.all_points}")
+      IO.puts("Month server all points are #{MonthServer.all_points}")
       IO.puts "get resident result!"
     end
   end
 
   # calculate attending
   def attending_result(_month, _attending, 0) do
-    {:error, "there is no result"}
+    raise "there is no attending's result"
   end
 
   def attending_result(default_month, default_attending, n) do
     if MonthServer.get_current_month() |> filter_no_attending_day() > 0 do
+      IO.puts("left #{n} times")
       AttendingServer.reset_attendings(default_attending)
       MonthServer.reset_month(default_month)
-      set_specific_day()
-      attending_wish_day(n, :holiday)
-      attending_random_holiday(n)
-      attending_wish_day(n, :normal)
-      attending_random_ordinary(n)
-      attending_result(default_month, default_attending, n - 1)
+      try do
+        set_specific_day()
+        attending_wish_day(100_000, :holiday)
+        attending_random_holiday(100_000)
+        attending_wish_day(100_000, :normal)
+        attending_random_ordinary(100_000)
+      after
+        attending_result(default_month, default_attending, n - 1)
+      end
     else
       {:ok, MonthServer.get_current_month()}
       IO.puts "get attending result!"
@@ -46,7 +56,7 @@ defmodule Schedule.Calculate do
   end
 
   def attending_random_holiday(0) do
-    IO.puts("no result!")
+    IO.puts("no random holiday result!")
   end
 
   def attending_random_holiday(n) do
@@ -59,7 +69,7 @@ defmodule Schedule.Calculate do
   end
 
   def attending_random_ordinary(0) do
-    IO.puts("no result!")
+    IO.puts("no random ordinary result!")
   end
 
   def attending_random_ordinary(n) do
@@ -145,16 +155,13 @@ defmodule Schedule.Calculate do
 
   # private methods
 
-  defp seize_holiday(0, _date, _identity) do
-    {:error, "it does not work"}
-  end
 
   defp seize_holiday(n, date, :attending) do
     {pick_id, person_info} =
       AttendingServer.get_current_attendings()
       |> Enum.random()
 
-    if can_be_reserved_ordinary?(person_info, elem(date, 0)) do
+    if can_be_reserved?(person_info, elem(date, 0)) do
       new_point = person_info.current_point + 2
       duty_days = [elem(date, 0) | person_info.duty_days]
       new_days = %{elem(date, 1) | attending_id: pick_id, attend: person_info.name}
@@ -171,12 +178,17 @@ defmodule Schedule.Calculate do
     end
   end
 
+
+  defp seize_holiday(0, date, _identity) do
+    raise "can't seize holiday #{elem(date, 0)}"
+  end
+
   defp seize_holiday(n, date, :resident) do
     {pick_id, person_info} =
       ResidentServer.get_current_residents()
       |> Enum.random()
 
-    if can_be_reserved?(person_info, elem(date, 0)) do
+    if can_be_reserved?(person_info, elem(date, 0)) && !break_holiday_policy?(person_info) do
       new_point = person_info.current_point + 2
       add_holiday = person_info.holidays_count + 1
       duty_days = [elem(date, 0) | person_info.duty_days]
@@ -190,37 +202,44 @@ defmodule Schedule.Calculate do
       })
 
       MonthServer.update_month(elem(date, 0), new_days)
+      IO.puts(elem(date, 0))
     else
       seize_holiday(n - 1, date, :resident)
     end
   end
 
-  defp seize_the_day(0, _date, _identity) do
-    {:error, "it does not work"}
+
+
+  defp seize_the_day(0, date, _identity) do
+    raise "can't seize the day: #{elem(date, 0)}"
   end
+
 
   defp seize_the_day(n, date, :resident) do
     {pick_id, person_info} =
       ResidentServer.get_current_residents()
       |> Enum.random()
 
-    if can_be_reserved_ordinary?(person_info, elem(date, 0)) do
+    if can_be_reserved?(person_info, elem(date, 0)) do
       new_point = person_info.current_point + 1
       duty_days = [elem(date, 0) | person_info.duty_days]
       new_days = %{elem(date, 1) | resident_id: pick_id, resident: person_info.name}
       ResidentServer.update_resident(pick_id, %{person_info | current_point: new_point, duty_days: duty_days})
       MonthServer.update_month(elem(date, 0), new_days)
+      IO.puts(elem(date, 0))
     else
       seize_the_day(n - 1, date, :resident)
     end
   end
+
+
 
   defp seize_the_day(n, date, :attending) do
     {pick_id, person_info} =
       AttendingServer.get_current_attendings()
       |> Enum.random()
 
-    if can_be_reserved_ordinary?(person_info, elem(date, 0)) do
+    if can_be_reserved?(person_info, elem(date, 0)) do
       new_point = person_info.current_point + 1
       duty_days = [elem(date, 0) | person_info.duty_days]
       new_days = %{elem(date, 1) | attending_id: pick_id, attend: person_info.name}
@@ -237,18 +256,8 @@ defmodule Schedule.Calculate do
     end
   end
 
-  defp can_be_reserved?(person, date) do
-    if Enum.member?(person.reserve_days, date) ||
-         Enum.member?(person.weekday_reserve, Timex.weekday(date)) ||
-         less_than_two?(person.duty_days, date) || exceed_maximum?(person, date) ||
-         break_holiday_policy?(person) do
-      false
-    else
-      true
-    end
-  end
 
-  defp can_be_reserved_ordinary?(person, date) do
+  defp can_be_reserved?(person, date) do
     if Enum.member?(person.reserve_days, date) ||
          Enum.member?(person.weekday_reserve, Timex.weekday(date)) ||
          less_than_two?(person.duty_days, date) || exceed_maximum?(person, date) do
@@ -258,6 +267,12 @@ defmodule Schedule.Calculate do
     end
   end
 
+
+  # resident holiday special function
+  defp break_holiday_policy?(person) do
+    person.max_holiday == person.holidays_count
+  end
+
   defp less_than_two?(days_list, date) do
     Enum.reduce(days_list, false, fn duty_day, acc ->
       days_interval =
@@ -265,7 +280,7 @@ defmodule Schedule.Calculate do
         |> Interval.duration(:days)
         |> abs
 
-      days_interval <= 3 || acc
+      days_interval <= 2 || acc
     end)
   end
 
@@ -273,10 +288,8 @@ defmodule Schedule.Calculate do
     person.current_point + MonthServer.get_specific_date(date).point > person.max_point
   end
 
-  # resident holiday special function
-  defp break_holiday_policy?(person) do
-    person.max_holiday == person.holidays_count
-  end
+
+
 
   # return keyword list
   defp filter_holidays(month) do
@@ -288,7 +301,7 @@ defmodule Schedule.Calculate do
     Enum.filter(month, fn {_date, value} -> !value.is_holiday end)
   end
 
-  defp filter_no_resident_day(month) do
+  def filter_no_resident_day(month) do
     month
     |> Enum.filter(fn {_date, value} -> value.resident_id == 0 end)
     |> Enum.count()
@@ -299,8 +312,8 @@ defmodule Schedule.Calculate do
     |> Enum.count()
   end
 
-  defp loop_to_pick_wish_days(0, _attending, _filter_days, _holiday?) do
-    IO.puts("No result")
+  defp loop_to_pick_wish_days(0, attending, _filter_days, _holiday?) do
+    raise "unable to pick #{elem(attending, 0)} wish days "
   end
 
   defp loop_to_pick_wish_days(n, attending, filter_days, holiday?) do
@@ -343,8 +356,9 @@ defmodule Schedule.Calculate do
       "result.csv",
       month
       |> Map.values()
-      |> Stream.map(&Map.take(&1, [:date_id, :attend, :resident]))
+      |> Stream.map(&Map.put(&1, :weekday, Timex.weekday(&1.date_id)))
       |> Stream.map(&Map.put(&1, :date_id, Date.to_string(&1.date_id)))
+      |> Stream.map(&Map.take(&1, [:date_id, :weekday, :attend, :resident]))
       |> Stream.map(&(Map.values(&1) |> Enum.join(", ")))
       |> Enum.join("\n ")
     )
@@ -355,12 +369,12 @@ defmodule Schedule.Calculate do
       "#{name}.csv",
       staff
       |> Map.values()
-      |> Stream.map(&Map.take(&1, [:name, :duty_days]))
+      |> Stream.map(&Map.take(&1, [:name, :duty_days, :current_point]))
       |> Stream.map(
         &Map.put(&1, :duty_days, Enum.map(&1.duty_days, fn date -> Date.to_string(date) end))
       )
       |> Stream.map(fn person ->
-        [Map.get(person, :name), Map.get(person, :duty_days)] |> List.flatten()
+        [Map.get(person, :name), Map.get(person, :current_point), Map.get(person, :duty_days)] |> List.flatten()
       end)
       |> Stream.map(&Enum.join(&1, ", "))
       |> Enum.join("\n ")

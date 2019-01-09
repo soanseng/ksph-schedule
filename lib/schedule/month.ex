@@ -11,13 +11,11 @@ defmodule Schedule.Month do
   """
   def generate_month(start_day, holidays \\ [], be_ordinary \\ [], should_be_removed \\ []) do
     Interval.new(from: start_day, until: [months: 1])
-    |> Interval.with_step(days: 1)
-    |> Flow.from_enumerable()
-    |> Flow.map(fn date -> {Timex.to_date(date), %Day{date_id: Timex.to_date(date)}} end)
-    |> Flow.filter(fn {date, _day} -> !Enum.member?(should_be_removed, date) end)
-    |> Flow.map(fn {date, day} -> {date, change_points({date, day})} end)
-    |> Flow.map(fn {date, day} -> {date, set_holidays({date, day}, holidays)} end)
-    |> Flow.map(fn {date, day} -> {date, turn_ordinary({date, day}, be_ordinary)} end)
+    |> Stream.map(fn date -> {Timex.to_date(date), %Day{date_id: Timex.to_date(date)}} end)
+    |> Stream.filter(fn {date, _day} -> !Enum.member?(should_be_removed, date) end)
+    |> Stream.map(fn {date, day} -> {date, change_points({date, day})} end)
+    |> Stream.map(fn {date, day} -> {date, set_holidays({date, day}, holidays)} end)
+    |> Stream.map(fn {date, day} -> {date, turn_ordinary({date, day}, be_ordinary)} end)
     |> Map.new()
   end
 
@@ -34,9 +32,6 @@ defmodule Schedule.Month do
     end)
   end
 
-  def all_points(month_list) do
-    Enum.reduce(month_list, 0, fn {_day, value}, acc -> value.point + acc end)
-  end
 
   defp change_points({date, day}) do
     case Timex.weekday(date) do

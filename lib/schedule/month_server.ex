@@ -30,6 +30,11 @@ defmodule Schedule.MonthServer do
     |> Enum.each(fn day -> Repo.insert!(day) end)
   end
 
+
+  def all_points() do
+    get_current_month() |> Enum.reduce(0, fn {_day, value}, acc -> value.point + acc end)
+  end
+
   # callback
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)

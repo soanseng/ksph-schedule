@@ -48,6 +48,15 @@ defmodule Schedule.AttendingServer do
   end
 
 
+  def modify_max_holiday(id, holiday) do
+    GenServer.cast(__MODULE__, {:modify_max_holiday, id, holiday})
+  end
+
+  def all_attendings_points() do
+    get_current_attendings() |> Map.values |> Enum.reduce(0, fn person, acc -> person.max_point + acc end)
+  end
+
+
 
   #callback
   def start_link(_opts) do
@@ -94,6 +103,12 @@ defmodule Schedule.AttendingServer do
   def handle_cast({:modify_max_points, id, point}, people) do
     data = Map.get(people, id)
     new_data = %{data | max_point: point}
+    {:noreply, Map.put(people, id, new_data )}
+  end
+
+  def handle_cast({:modify_max_holiday, id, holiday}, people) do
+    data = Map.get(people, id)
+    new_data = %{data | max_holiday: holiday}
     {:noreply, Map.put(people, id, new_data )}
   end
 
