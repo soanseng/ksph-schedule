@@ -24,9 +24,11 @@ defmodule Schedule.Calculate do
         resident_result(default_month, default_resident, n - 1)
       end
     else
+      {:ok, MonthServer.get_current_month()}
       IO.puts("Resident all points are #{ResidentServer.all_points}")
       IO.puts("Month server all points are #{MonthServer.all_points}")
       IO.puts "get resident result!"
+      ResidentServer.get_current_residents |> staff_to_csv("resident")
     end
   end
 
@@ -280,7 +282,7 @@ defmodule Schedule.Calculate do
         |> Interval.duration(:days)
         |> abs
 
-      days_interval <= 2 || acc
+      days_interval <= 3 || acc
     end)
   end
 
@@ -301,7 +303,7 @@ defmodule Schedule.Calculate do
     Enum.filter(month, fn {_date, value} -> !value.is_holiday end)
   end
 
-  def filter_no_resident_day(month) do
+  defp filter_no_resident_day(month) do
     month
     |> Enum.filter(fn {_date, value} -> value.resident_id == 0 end)
     |> Enum.count()
