@@ -12,27 +12,25 @@ defmodule Schedule.Calculate do
   end
 
   def resident_result(default_month, default_resident, n) do
-    if (MonthServer.get_current_month() |> filter_no_resident_day() > 0 )  do
 
-      if Integer.mod(n, 1000) == 0  do
-        IO.puts("Now it left #{n} times in residents")
-      end
-
+    if Integer.mod(n, 1000) == 0  do
+      IO.puts("Now it left #{n} times in residents")
+    end
+    try do
       ResidentServer.reset_residents(default_resident)
       MonthServer.reset_month(default_month)
-      try do
-        set_the_holiday(1_000, :resident)
-        set_the_ordinary(10_000, :resident)
-        {:ok, MonthServer.get_current_month()}
-        IO.puts("Resident all points are #{ResidentServer.all_points}")
-        IO.puts("Month server all points are #{MonthServer.all_points}")
-        IO.puts "get resident result!"
-        ResidentServer.get_current_residents |> staff_to_csv("resident")
-      rescue
-        e in RuntimeError ->
-          IO.inspect e
-          resident_result(default_month, default_resident, n - 1)
-      end
+      set_the_holiday(1_000, :resident)
+      set_the_ordinary(10_000, :resident)
+      check_resident_arrangement()
+      {:ok, MonthServer.get_current_month()}
+      IO.puts("Resident all points are #{ResidentServer.all_points}")
+      IO.puts("Month server all points are #{MonthServer.all_points}")
+      IO.puts "get resident result!"
+      ResidentServer.get_current_residents |> staff_to_csv("resident")
+    rescue
+      e in RuntimeError ->
+        IO.inspect e
+      resident_result(default_month, default_resident, n - 1)
     end
   end
 
@@ -51,7 +49,7 @@ defmodule Schedule.Calculate do
       attending_wish_day(10_000, :normal)
       attending_random_holiday(10_000)
       attending_random_ordinary(10_000)
-      check_arrangement()
+      check_attending_arrangement()
       {:ok, MonthServer.get_current_month()}
       IO.puts "get attending result!"
       AttendingServer.get_current_attendings |> staff_to_csv("attending")
@@ -62,7 +60,13 @@ defmodule Schedule.Calculate do
     end
   end
 
-  def check_arrangement() do
+  def check_resident_arrangement() do
+    if (MonthServer.get_current_month() |> filter_no_resident_day() > 0 )  do
+      raise "there is someone not yet arranged"
+    end
+  end
+
+  def check_attending_arrangement() do
     if MonthServer.get_current_month() |> filter_no_attending_day() > 0 do
       raise "there is someone not yet arranged"
     end
@@ -270,7 +274,6 @@ defmodule Schedule.Calculate do
       })
 
       MonthServer.update_month(elem(date, 0), new_days)
-      IO.puts(elem(date, 0))
     else
       seize_the_day(n - 1, date, :attending)
     end
