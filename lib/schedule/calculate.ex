@@ -13,7 +13,7 @@ defmodule Schedule.Calculate do
 
   def resident_result(default_month, default_resident, n) do
 
-    if Integer.mod(n, 1000) == 0  do
+    if Integer.mod(n, 100) == 0  do
       IO.puts("Now it left #{n} times in residents")
     end
     try do
@@ -29,7 +29,7 @@ defmodule Schedule.Calculate do
       ResidentServer.get_current_residents |> staff_to_csv("resident")
     rescue
       e in RuntimeError ->
-        IO.inspect e
+        # IO.inspect e
       resident_result(default_month, default_resident, n - 1)
     end
   end
@@ -55,28 +55,30 @@ defmodule Schedule.Calculate do
       AttendingServer.get_current_attendings |> staff_to_csv("attending")
     rescue
       e in RuntimeError ->
-        IO.inspect e
+        # IO.inspect e
       attending_result(default_month, default_attending, n - 1)
     end
   end
 
-  def check_resident_arrangement() do
+  # private 
+
+  defp check_resident_arrangement() do
     if (MonthServer.get_current_month() |> filter_no_resident_day() > 0 )  do
       raise "there is someone not yet arranged"
     end
   end
 
-  def check_attending_arrangement() do
+  defp check_attending_arrangement() do
     if MonthServer.get_current_month() |> filter_no_attending_day() > 0 do
       raise "there is someone not yet arranged"
     end
   end
 
-  def attending_random_holiday(0) do
+  defp attending_random_holiday(0) do
     raise "no random holiday result!"
   end
 
-  def attending_random_holiday(n) do
+  defp attending_random_holiday(n) do
     IO.puts("set random holiday")
     MonthServer.get_current_month()
     |> filter_holidays()
@@ -86,12 +88,12 @@ defmodule Schedule.Calculate do
     end)
   end
 
-  def attending_random_ordinary(0) do
+  defp attending_random_ordinary(0) do
     raise("no random ordinary result!")
   end
 
 
-  def attending_random_ordinary(n) do
+  defp attending_random_ordinary(n) do
     IO.puts("set random ordinary")
     MonthServer.get_current_month()
     |> filter_ordinary_days()
@@ -101,7 +103,7 @@ defmodule Schedule.Calculate do
     end)
   end
 
-  def attending_wish_day(n, :holiday) do
+  defp attending_wish_day(n, :holiday) do
     IO.puts("set attending wish holidays")
     filter_days =
       MonthServer.get_current_month()
@@ -117,7 +119,7 @@ defmodule Schedule.Calculate do
 
   end
 
-  def attending_wish_day(n, :normal) do
+  defp attending_wish_day(n, :normal) do
     IO.puts("set attending wish normal days")
     filter_days =
       MonthServer.get_current_month()
@@ -133,7 +135,7 @@ defmodule Schedule.Calculate do
 
   end
 
-  def set_specific_day() do
+  defp set_specific_day() do
     AttendingServer.get_current_attendings()
     |> Enum.filter(fn {_pick_id, value} -> value.duty_wish != [] end)
     |> Enum.each(fn {pick_id, person_info} ->
@@ -163,7 +165,7 @@ defmodule Schedule.Calculate do
     end)
   end
 
-  def set_the_holiday(n, identity) do
+  defp set_the_holiday(n, identity) do
     MonthServer.get_current_month()
     |> filter_holidays
     |> Enum.each(fn date ->
@@ -171,13 +173,12 @@ defmodule Schedule.Calculate do
     end)
   end
 
-  def set_the_ordinary(n, identity) do
+  defp set_the_ordinary(n, identity) do
     MonthServer.get_current_month()
     |> Enum.filter(fn {_date, value} -> !value.is_holiday end)
     |> Enum.each(fn date -> seize_the_day(n, date, identity) end)
   end
 
-  # private methods
   defp seize_holiday(0, date, _identity) do
     raise "can't seize holiday #{elem(date, 0)}"
   end
