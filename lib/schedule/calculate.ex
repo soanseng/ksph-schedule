@@ -42,26 +42,29 @@ defmodule Schedule.Calculate do
   end
 
   def attending_result(default_month, default_attending, n) do
-    if MonthServer.get_current_month() |> filter_no_attending_day() > 0 do
-      if Integer.mod(n, 1000) == 0  do
-        IO.puts("left #{n} times")
-      end
+    IO.puts("left #{n} times")
+    try do
       AttendingServer.reset_attendings(default_attending)
       MonthServer.reset_month(default_month)
-      try do
-        set_specific_day()
-        attending_wish_day(10_000, :holiday)
-        attending_wish_day(10_000, :normal)
-        attending_random_holiday(10_000)
-        attending_random_ordinary(10_000)
-        {:ok, MonthServer.get_current_month()}
-        IO.puts "get attending result!"
-        AttendingServer.get_current_attendings |> staff_to_csv("attending")
-      rescue
-        e in RuntimeError ->
-          IO.inspect e
-        attending_result(default_month, default_attending, n - 1)
-      end
+      set_specific_day()
+      attending_wish_day(10_000, :holiday)
+      attending_wish_day(10_000, :normal)
+      attending_random_holiday(10_000)
+      attending_random_ordinary(10_000)
+      check_arrangement()
+      {:ok, MonthServer.get_current_month()}
+      IO.puts "get attending result!"
+      AttendingServer.get_current_attendings |> staff_to_csv("attending")
+    rescue
+      e in RuntimeError ->
+        IO.inspect e
+      attending_result(default_month, default_attending, n - 1)
+    end
+  end
+
+  def check_arrangement() do
+    if MonthServer.get_current_month() |> filter_no_attending_day() > 0 do
+      raise "there is someone not yet arranged"
     end
   end
 
@@ -126,7 +129,6 @@ defmodule Schedule.Calculate do
 
   end
 
-  #TODO: need to have raise error here
   def set_specific_day() do
     AttendingServer.get_current_attendings()
     |> Enum.filter(fn {_pick_id, value} -> value.duty_wish != [] end)
@@ -193,7 +195,6 @@ defmodule Schedule.Calculate do
       })
 
       MonthServer.update_month(elem(date, 0), new_days)
-      IO.puts(elem(date, 0))
     else
       seize_holiday(n - 1, date, :attending)
     end
@@ -330,7 +331,7 @@ defmodule Schedule.Calculate do
     |> Enum.count()
   end
 
-  defp filter_no_attending_day(month) do
+  def filter_no_attending_day(month) do
     Enum.filter(month, fn {_date, value} -> value.attending_id == 0 end)
     |> Enum.count()
   end

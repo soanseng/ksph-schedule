@@ -9,7 +9,7 @@ defmodule Schedule.MonthServer do
   end
 
   def reset_month(default) do
-    GenServer.cast(MonthServer, {:reset, default})
+    GenServer.cast(__MODULE__, {:reset, default})
   end
 
   def get_current_month() do
