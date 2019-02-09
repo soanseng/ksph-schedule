@@ -14,21 +14,25 @@ defmodule Schedule.Calculate do
   def resident_result(default_month, default_resident, n) do
     if (MonthServer.get_current_month() |> filter_no_resident_day() > 0 )  do
 
-      IO.puts("Now it left #{n} times in residents")
+      if Integer.mod(n, 1000) == 0  do
+        IO.puts("Now it left #{n} times in residents")
+      end
+
       ResidentServer.reset_residents(default_resident)
       MonthServer.reset_month(default_month)
       try do
-        set_the_holiday(1_00_000, :resident)
-        set_the_ordinary(1_00_000, :resident)
-      after
-        resident_result(default_month, default_resident, n - 1)
+        set_the_holiday(1_000, :resident)
+        set_the_ordinary(10_000, :resident)
+        {:ok, MonthServer.get_current_month()}
+        IO.puts("Resident all points are #{ResidentServer.all_points}")
+        IO.puts("Month server all points are #{MonthServer.all_points}")
+        IO.puts "get resident result!"
+        ResidentServer.get_current_residents |> staff_to_csv("resident")
+      rescue
+        e in RuntimeError ->
+          IO.inspect e
+          resident_result(default_month, default_resident, n - 1)
       end
-    else
-      {:ok, MonthServer.get_current_month()}
-      IO.puts("Resident all points are #{ResidentServer.all_points}")
-      IO.puts("Month server all points are #{MonthServer.all_points}")
-      IO.puts "get resident result!"
-      ResidentServer.get_current_residents |> staff_to_csv("resident")
     end
   end
 
@@ -39,29 +43,34 @@ defmodule Schedule.Calculate do
 
   def attending_result(default_month, default_attending, n) do
     if MonthServer.get_current_month() |> filter_no_attending_day() > 0 do
-      IO.puts("left #{n} times")
+      if Integer.mod(n, 1000) == 0  do
+        IO.puts("left #{n} times")
+      end
       AttendingServer.reset_attendings(default_attending)
       MonthServer.reset_month(default_month)
       try do
         set_specific_day()
-        attending_wish_day(100_000, :holiday)
-        attending_random_holiday(100_000)
-        attending_wish_day(100_000, :normal)
-        attending_random_ordinary(100_000)
-      after
+        attending_wish_day(10_000, :holiday)
+        attending_wish_day(10_000, :normal)
+        attending_random_holiday(10_000)
+        attending_random_ordinary(10_000)
+        {:ok, MonthServer.get_current_month()}
+        IO.puts "get attending result!"
+        AttendingServer.get_current_attendings |> staff_to_csv("attending")
+      rescue
+        e in RuntimeError ->
+          IO.inspect e
         attending_result(default_month, default_attending, n - 1)
       end
-    else
-      {:ok, MonthServer.get_current_month()}
-      IO.puts "get attending result!"
     end
   end
 
   def attending_random_holiday(0) do
-    IO.puts("no random holiday result!")
+    raise "no random holiday result!"
   end
 
   def attending_random_holiday(n) do
+    IO.puts("set random holiday")
     MonthServer.get_current_month()
     |> filter_holidays()
     |> Enum.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
@@ -71,10 +80,12 @@ defmodule Schedule.Calculate do
   end
 
   def attending_random_ordinary(0) do
-    IO.puts("no random ordinary result!")
+    raise("no random ordinary result!")
   end
 
+
   def attending_random_ordinary(n) do
+    IO.puts("set random ordinary")
     MonthServer.get_current_month()
     |> filter_ordinary_days()
     |> Enum.filter(fn {_date, day_value} -> day_value.attending_id == 0 end)
@@ -84,6 +95,7 @@ defmodule Schedule.Calculate do
   end
 
   def attending_wish_day(n, :holiday) do
+    IO.puts("set attending wish holidays")
     filter_days =
       MonthServer.get_current_month()
       |> filter_holidays()
@@ -95,9 +107,11 @@ defmodule Schedule.Calculate do
         person_info.current_point == 0
     end)
     |> Enum.each(fn attending -> loop_to_pick_wish_days(n, attending, filter_days, :holiday) end)
+
   end
 
   def attending_wish_day(n, :normal) do
+    IO.puts("set attending wish normal days")
     filter_days =
       MonthServer.get_current_month()
       |> filter_ordinary_days()
@@ -109,8 +123,10 @@ defmodule Schedule.Calculate do
         person_info.current_point == 0
     end)
     |> Enum.each(fn attending -> loop_to_pick_wish_days(n, attending, filter_days, :normal) end)
+
   end
 
+  #TODO: need to have raise error here
   def set_specific_day() do
     AttendingServer.get_current_attendings()
     |> Enum.filter(fn {_pick_id, value} -> value.duty_wish != [] end)
@@ -156,7 +172,9 @@ defmodule Schedule.Calculate do
   end
 
   # private methods
-
+  defp seize_holiday(0, date, _identity) do
+    raise "can't seize holiday #{elem(date, 0)}"
+  end
 
   defp seize_holiday(n, date, :attending) do
     {pick_id, person_info} =
@@ -175,15 +193,13 @@ defmodule Schedule.Calculate do
       })
 
       MonthServer.update_month(elem(date, 0), new_days)
+      IO.puts(elem(date, 0))
     else
       seize_holiday(n - 1, date, :attending)
     end
   end
 
 
-  defp seize_holiday(0, date, _identity) do
-    raise "can't seize holiday #{elem(date, 0)}"
-  end
 
   defp seize_holiday(n, date, :resident) do
     {pick_id, person_info} =
@@ -204,7 +220,7 @@ defmodule Schedule.Calculate do
       })
 
       MonthServer.update_month(elem(date, 0), new_days)
-      IO.puts(elem(date, 0))
+      # IO.puts(elem(date, 0))
     else
       seize_holiday(n - 1, date, :resident)
     end
@@ -228,7 +244,7 @@ defmodule Schedule.Calculate do
       new_days = %{elem(date, 1) | resident_id: pick_id, resident: person_info.name}
       ResidentServer.update_resident(pick_id, %{person_info | current_point: new_point, duty_days: duty_days})
       MonthServer.update_month(elem(date, 0), new_days)
-      IO.puts(elem(date, 0))
+      # IO.puts(elem(date, 0))
     else
       seize_the_day(n - 1, date, :resident)
     end
@@ -253,6 +269,7 @@ defmodule Schedule.Calculate do
       })
 
       MonthServer.update_month(elem(date, 0), new_days)
+      IO.puts(elem(date, 0))
     else
       seize_the_day(n - 1, date, :attending)
     end
@@ -278,9 +295,13 @@ defmodule Schedule.Calculate do
   defp less_than_two?(days_list, date) do
     Enum.reduce(days_list, false, fn duty_day, acc ->
       days_interval =
+      if date > duty_day do
+        Interval.new(from: duty_day, until: date)
+        |> Interval.duration(:days)
+      else
         Interval.new(from: date, until: duty_day)
         |> Interval.duration(:days)
-        |> abs
+      end
 
       days_interval <= 3 || acc
     end)

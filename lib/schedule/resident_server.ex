@@ -35,6 +35,12 @@ defmodule Schedule.ResidentServer do
     end)
   end
 
+  def all_max_points do
+    get_current_residents() |> Map.values |> Enum.reduce(0, fn person, acc ->
+      person.max_point + acc
+    end)
+  end
+
 
 
 

@@ -3,6 +3,7 @@ defmodule Schedule.AttendingServer do
   alias Schedule.Person
   alias Schedule.Repo
   alias Schedule.Month
+  alias Schedule.MonthServer
   import Ecto.Query
 
   #api
@@ -114,7 +115,7 @@ defmodule Schedule.AttendingServer do
 
 
   def handle_cast({:set_max_points, this_month}, people) do
-    extra_point = Enum.count(people) * 2 - Month.all_points(this_month)
+    extra_point = Enum.count(people) * 2 - MonthServer.all_points()
 
     new_people =
       people
