@@ -29,6 +29,11 @@ defmodule Schedule.ResidentServer do
     GenServer.cast(__MODULE__, {:update, id, new_data})
   end
 
+
+  def add_tempo(id, new_data) do
+    GenServer.cast(__MODULE__, {:add_tempo, id, new_data})
+  end
+
   def all_points do
     get_current_residents() |> Map.values |> Enum.reduce(0, fn person, acc ->
       person.current_point + acc
@@ -89,5 +94,9 @@ defmodule Schedule.ResidentServer do
 
   def handle_cast({:reset, default}, people) do
     {:noreply, Map.merge(people, default)}
+  end
+
+  def handle_cast({:add_tempo, id, new_data}, people) do
+    {:noreply, Map.put(people, id, new_data)}
   end
 end

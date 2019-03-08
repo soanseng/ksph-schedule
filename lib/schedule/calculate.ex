@@ -20,7 +20,7 @@ defmodule Schedule.Calculate do
       ResidentServer.reset_residents(default_resident)
       MonthServer.reset_month(default_month)
       set_the_holiday(1_000, :resident)
-      set_the_ordinary(10_000, :resident)
+      set_the_ordinary(5_000, :resident)
       check_resident_arrangement()
       {:ok, MonthServer.get_current_month()}
       IO.puts("Resident all points are #{ResidentServer.all_points}")
@@ -61,6 +61,10 @@ defmodule Schedule.Calculate do
   end
 
   # private 
+
+  # TODO: check friday for every resident, only once in a month
+  def check_friday?() do
+  end
 
   defp check_resident_arrangement() do
     if (MonthServer.get_current_month() |> filter_no_resident_day() > 0 )  do
@@ -308,7 +312,7 @@ defmodule Schedule.Calculate do
         |> Interval.duration(:days)
       end
 
-      days_interval <= 3 || acc
+      days_interval <= 2 || acc
     end)
   end
 
