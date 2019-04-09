@@ -2,38 +2,19 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-config :schedule, Schedule.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  database: "schedule_repo",
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost"
+# By default, the umbrella project as well as each child
+# application will require this configuration file, as
+# configuration and dependencies are shared in an umbrella
+# project. While one could configure all applications here,
+# we prefer to keep the configuration of each individual
+# child application in their own app, but all other
+# dependencies, regardless if they belong to one or multiple
+# apps, should be configured in the umbrella to avoid confusion.
+import_config "../apps/*/config/config.exs"
 
-config :schedule, ecto_repos: [Schedule.Repo]
-
-# This configuration is loaded before any dependency and is restricted
-# to this project. If another project depends on this project, this
-# file won't be loaded nor affect the parent project. For this reason,
-# if you want to provide default values for your application for
-# 3rd-party users, it should be done in your "mix.exs" file.
-
-# You can configure your application as:
+# Sample configuration (overrides the imported configuration above):
 #
-#     config :schedule, key: :value
-#
-# and access this configuration in your application as:
-#
-#     Application.get_env(:schedule, :key)
-#
-# You can also configure a 3rd-party app:
-#
-#     config :logger, level: :info
-#
-
-# It is also possible to import configuration files, relative to this
-# directory. For example, you can emulate configuration per environment
-# by uncommenting the line below and defining dev.exs, test.exs and such.
-# Configuration from the imported file will override the ones defined
-# here (which is why it is important to import them last).
-#
-#     import_config "#{Mix.env}.exs"
+#     config :logger, :console,
+#       level: :info,
+#       format: "$date $time [$level] $metadata$message\n",
+#       metadata: [:user_id]
