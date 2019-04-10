@@ -1,1 +1,26 @@
-<h1> hello world</h1>
+<h1> People</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Level</th>
+      <th>Reserve Days</th>
+      <th>Ranking</th>
+      <th>Attending?</th>
+
+    </tr>
+  </thead>
+  <tbody>
+    <%= for person <- @people do %>
+        <tr>
+          <td><%= person.name %></td>
+          <td><%= person.level %></td>
+          <td><%= person.reserve_days %></td>
+          <td><%= person.ranking %></td>
+          <td><%= person.is_attending %></td>
+        </tr>
+        <% end %>
+
+  </tbody>
+</table>
