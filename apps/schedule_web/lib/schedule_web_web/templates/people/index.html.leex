@@ -14,7 +14,20 @@
   <tbody>
     <%= for person <- @people do %>
         <tr>
-          <td><%= person.name %></td>
+          <%= if @editable_id == person.doctor_id do %>
+          <td>
+            <%= form_for @changeset, "#", [phx_submit: :save], fn f -> %>
+    <%= hidden_input f, :doctor_id, name: "id" %>
+    <%= text_input f, :name %>
+    <%= submit "Update", phx_disable_with: "Saving..." %>
+    <% end %>
+</td>
+<% else %>
+<td phx-click="edit<%= person.doctor_id %>" class="editable-field">
+  <%= person.name %>
+</td>
+<% end %>
+
           <td><%= person.level %></td>
           <td><%= person.reserve_days %></td>
           <td><%= person.ranking %></td>

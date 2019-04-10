@@ -28,8 +28,8 @@ defmodule Schedule.MixProject do
   defp deps do
     [
       {:timex, "~> 3.1"},
-      {:ecto, "~> 2.2.10"},
-      {:postgrex, "~> 0.11"},
+      {:ecto_sql, "~> 3.0"},
+      {:postgrex, ">= 0.0.0"},
       {:poison, "~> 3.1"},
       {:flow, "~> 0.14"}
       # {:dep_from_hexpm, "~> 0.3.0"},
