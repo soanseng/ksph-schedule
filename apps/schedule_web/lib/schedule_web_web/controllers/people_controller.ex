@@ -1,10 +1,9 @@
 defmodule ScheduleWebWeb.PeopleController do
   use ScheduleWebWeb, :controller
-  alias Schedule.Repo
-  alias Schedule.Person
+  alias Phoenix.LiveView
+  alias ScheduleWebWeb.PeopleLive.Index
 
   def index(conn, _params) do
-    people = Repo.all(Person)
-    render(conn, "index.html", people: people)
+    LiveView.Controller.live_render(conn, Index, session: %{})
   end
 end

@@ -12,7 +12,10 @@ config :schedule_web, ScheduleWebWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "xIcW4cicptN7faTg4UeA5oF9gBFfmXwWp0M54CVjQSXZpRLJ6Fn6MvtJmxOB8Rfe",
   render_errors: [view: ScheduleWebWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: ScheduleWeb.PubSub, adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: ScheduleWeb.PubSub, adapter: Phoenix.PubSub.PG2],
+  live_view: [
+    signing_salt: "365ezFJnu7YIWnmg+Hv1xFlcA5VvV23f"
+   ]
 
 # Configures Elixir's Logger
 config :logger, :console,

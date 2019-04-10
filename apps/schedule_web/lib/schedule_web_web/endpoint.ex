@@ -1,6 +1,8 @@
 defmodule ScheduleWebWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :schedule_web
 
+  socket "/live", Phoenix.LiveView.Socket
+
   socket "/socket", ScheduleWebWeb.UserSocket,
     websocket: true,
     longpoll: false
