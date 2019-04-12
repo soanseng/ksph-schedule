@@ -22,9 +22,15 @@ defmodule Schedule.Recordings do
   end
 
   def update_weekday(%Person{} = person, attrs) do
-    weekday_list= attrs["weekday_reserve"]
-    |> String.split(", ")
-    |> Enum.map(&String.to_integer(&1))
+
+    weekday_list=
+    if attrs["weekday_reserve"] == "" do
+      []
+    else
+      attrs["weekday_reserve"]
+      |> String.split(", ")
+      |> Enum.map(&String.to_integer(&1))
+    end
 
     person
     |> Person.person_changeset(%{"weekday_reserve": weekday_list})
@@ -33,16 +39,22 @@ defmodule Schedule.Recordings do
   end
 
   def update_reserve(%Person{} = person, attrs) do
-    reserves= attrs["reserve_days"] |> String.split(", ")
-    day_list = reserves |> parse_days
 
-    {year, month, _day} =
-      Schedule.MonthServer.get_current_month
-      |> Map.keys
-      |> Kernel.hd
-      |> Date.to_erl
+    reserve_days =
+    if attrs["reserve_days"] == "" do
+      []
+    else
+      reserves= attrs["reserve_days"] |> String.split(", ")
+      day_list = reserves |> parse_days
 
-    reserve_days = Month.generate_reserve_list(year, month, day_list)
+      {year, month, _day} =
+        Schedule.MonthServer.get_current_month
+        |> Map.keys
+        |> Kernel.hd
+        |> Date.to_erl
+
+      Month.generate_reserve_list(year, month, day_list)
+    end
 
     person
     |> Person.person_changeset(%{"reserve_days": reserve_days})
