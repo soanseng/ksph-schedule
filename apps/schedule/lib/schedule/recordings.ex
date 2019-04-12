@@ -31,11 +31,11 @@ defmodule Schedule.Recordings do
 
   end
 
-  def update_reserve(%Person{} = person, attrs, month) do
+  def update_reserve(%Person{} = person, attrs, {year, month}) do
     reserves= attrs["reserve_days"] |> String.split(", ")
     day_list = reserves |> parse_days
 
-    reserve_days = Month.generate_reserve_list(2019, String.to_integer(month), day_list)
+    reserve_days = Month.generate_reserve_list(year, month, day_list)
 
     person
     |> Person.person_changeset(%{"reserve_days": reserve_days})

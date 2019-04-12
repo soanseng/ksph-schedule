@@ -6,8 +6,10 @@ defmodule ScheduleWebWeb.PeopleLive.Index do
   alias ScheduleWebWeb.PeopleView
   alias ScheduleWebWeb.Router.Helpers, as: Routes
 
+  import Ecto.Query, only: [order_by: 3]
+
   def mount(_session, socket) do
-    people = Repo.all(Person)
+    people = Person|> order_by([p], asc: p.is_attending, asc: p.doctor_id) |> Repo.all()
     {:ok, assign(socket, people: people,
         weekday_id: nil,
         reserve_id: nil,
@@ -19,9 +21,10 @@ defmodule ScheduleWebWeb.PeopleLive.Index do
     PeopleView.render("index.html", assigns)
   end
 
-  def handle_event("update_month", %{"month"=> month}, socket) do
-    IO.puts "this month is #{month}"
-    {:noreply, assign(socket, month: month)}
+  def handle_event("update_month", %{"year"=> year, "month"=> month}, socket) do
+    {:noreply,
+     assign(socket, month: {String.to_integer(year), String.to_integer(month)})
+    }
   end
 
   def handle_event("reset_month",_ , socket) do
@@ -76,6 +79,7 @@ defmodule ScheduleWebWeb.PeopleLive.Index do
   def handle_event("save_reserve", %{"id" => person_id, "person" => person_params}, socket) do
     person_id = String.to_integer(person_id)
     person = Enum.find(socket.assigns.people, &(&1.doctor_id == person_id))
+
     case Recordings.update_reserve(person, person_params, socket.assigns.month) do
       {:ok, _person} ->
         {:stop,
