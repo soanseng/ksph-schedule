@@ -22,9 +22,9 @@ defmodule ScheduleWebWeb.PeopleLive.Index do
   end
 
   def handle_event("update_month", %{"year"=> year, "month"=> month}, socket) do
-    {:noreply,
-     assign(socket, month: {String.to_integer(year), String.to_integer(month)})
-    }
+    date = Date.from_iso8601!("#{year}-#{month}-01")
+    Schedule.MonthServer.set_this_month(date)
+    {:noreply, socket}
   end
 
   def handle_event("reset_month",_ , socket) do
@@ -80,7 +80,7 @@ defmodule ScheduleWebWeb.PeopleLive.Index do
     person_id = String.to_integer(person_id)
     person = Enum.find(socket.assigns.people, &(&1.doctor_id == person_id))
 
-    case Recordings.update_reserve(person, person_params, socket.assigns.month) do
+    case Recordings.update_reserve(person, person_params) do
       {:ok, _person} ->
         {:stop,
          socket

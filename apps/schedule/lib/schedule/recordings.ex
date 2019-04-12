@@ -3,6 +3,7 @@ defmodule Schedule.Recordings do
   alias Schedule.Person
   alias Schedule.Repo
   alias Schedule.Month
+  alias Schedule.MonthServer
 
   def get_by_doctor_id(id) do
     Person
@@ -31,9 +32,15 @@ defmodule Schedule.Recordings do
 
   end
 
-  def update_reserve(%Person{} = person, attrs, {year, month}) do
+  def update_reserve(%Person{} = person, attrs) do
     reserves= attrs["reserve_days"] |> String.split(", ")
     day_list = reserves |> parse_days
+
+    {year, month, _day} =
+      Schedule.MonthServer.get_current_month
+      |> Map.keys
+      |> Kernel.hd
+      |> Date.to_erl
 
     reserve_days = Month.generate_reserve_list(year, month, day_list)
 
