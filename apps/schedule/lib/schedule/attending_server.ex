@@ -17,14 +17,12 @@ defmodule Schedule.AttendingServer do
 
   def set_reserve(
     id,
-    weekdays_reserve \\ [],
-    reserve_days \\ [],
     duty_wish \\ [],
     weekday_wish \\ []
   ) do
     GenServer.cast(
       __MODULE__,
-      {:attending_reserve, id, weekdays_reserve, reserve_days, duty_wish, weekday_wish}
+      {:attending_reserve, id, duty_wish, weekday_wish}
     )
   end
 
@@ -133,16 +131,14 @@ defmodule Schedule.AttendingServer do
   end
 
   def handle_cast(
-        {:attending_reserve, id, weekdays_reserve, reserve_days, duty_wish, weekday_wish},
+        {:attending_reserve, id, duty_wish, weekday_wish},
         people
       ) do
     person = Map.get(people, id)
 
     new_person = %{
       person
-      | reserve_days: reserve_days,
-        weekday_reserve: weekdays_reserve,
-        duty_wish: duty_wish,
+      | duty_wish: duty_wish,
         weekday_wish: [weekday_wish | person.weekday_wish] |> List.flatten()
     }
 
