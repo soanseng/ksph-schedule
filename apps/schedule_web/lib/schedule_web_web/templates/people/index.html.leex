@@ -1,12 +1,24 @@
 <h1> People</h1>
 
+ <form  phx-submit="update_month" method="post">
+  Setting this month:<br>
+  <input type="text" name="month"><br>
+  <input type="submit" value="Submit">
+</form>
+
+ <br/>
+
+ <form phx-submit="reset_month" method="post">
+  RESET all users' reserved month:<br>
+  <input type="submit" value="RESET">
+</form>
+
 <table>
   <thead>
     <tr>
       <th>Name</th>
-      <th>Level</th>
       <th>Reserve Days</th>
-      <th>Ranking</th>
+      <th>WeekDay Reserve </th>
       <th>Attending?</th>
 
     </tr>
@@ -14,23 +26,45 @@
   <tbody>
     <%= for person <- @people do %>
         <tr>
-          <%= if @editable_id == person.doctor_id do %>
           <td>
-            <%= form_for @changeset, "#", [phx_submit: :save], fn f -> %>
-    <%= hidden_input f, :doctor_id, name: "id" %>
-    <%= text_input f, :name %>
-    <%= submit "Update", phx_disable_with: "Saving..." %>
-    <% end %>
-</td>
-<% else %>
-<td phx-click="edit<%= person.doctor_id %>" class="editable-field">
-  <%= person.name %>
-</td>
-<% end %>
+            <%= person.name %>
+          </td>
 
-          <td><%= person.level %></td>
-          <td><%= person.reserve_days %></td>
-          <td><%= person.ranking %></td>
+          <%= if @reserve_id == person.doctor_id do %>
+            <td>
+              <%= form_for @changeset, "#", [phx_submit: :save_reserve], fn f -> %>
+                <%= hidden_input f, :doctor_id, name: "id" %>
+                <%= label f, :reserve_days %>
+                <%= weekday_input f, :reserve_days %>
+                <%= submit "Update", phx_disable_with: "Saving..." %>
+              <% end %>
+            </td>
+          <% else %>
+            <td phx-click="reserve<%= person.doctor_id %>" class="editable-field">
+              <%= if person.reserve_days == nil do %>
+
+              <% else %>
+                <%= for date <- person.reserve_days do %>
+                  <li> <%= date %> </li>
+                <% end %>
+              <% end %>
+            </td>
+          <% end %>
+
+          <%= if @weekday_id == person.doctor_id do %>
+            <td>
+              <%= form_for @changeset, "#", [phx_submit: :save_wk_day], fn f -> %>
+                <%= hidden_input f, :doctor_id, name: "id" %>
+                <%= label f, :weekday_reserve %>
+                <%= weekday_input f, :weekday_reserve %>
+                <%= submit "Update", phx_disable_with: "Saving..." %>
+              <% end %>
+            </td>
+          <% else %>
+            <td phx-click="weekday<%= person.doctor_id %>" class="editable-field">
+              <%= if person.weekday_reserve == nil, do: "", else: Enum.join(person.weekday_reserve, ", ") %>
+            </td>
+          <% end %>
           <td><%= person.is_attending %></td>
         </tr>
         <% end %>

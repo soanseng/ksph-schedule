@@ -40,10 +40,10 @@ defmodule ScheduleWebWeb do
       use Phoenix.HTML
 
       import ScheduleWebWeb.ErrorHelpers
+      import ScheduleWebWeb.InputHelpers
       import ScheduleWebWeb.Gettext
       alias ScheduleWebWeb.Router.Helpers, as: Routes
-
-          import Phoenix.LiveView, only: [live_render: 2, live_render: 3]
+      import Phoenix.LiveView, only: [live_render: 2, live_render: 3]
     end
   end
 

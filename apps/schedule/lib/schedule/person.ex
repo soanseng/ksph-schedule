@@ -10,7 +10,7 @@ defmodule Schedule.Person do
     field(:current_point, :integer, virtual: true, default: 0)
     field(:holidays_count, :integer, virtual: true, default: 0)
     field(:reserve_days, {:array, :date}, default: [])
-    field(:weekday_reserve, {:array, :date}, virtual: true, default: [])
+    field(:weekday_reserve, {:array, :integer}, default: [])
     field(:weekday_wish, {:array, :integer}, default: [])
     field(:duty_wish, {:array, :date}, virtual: true, default: [])
     field(:name, :string)
