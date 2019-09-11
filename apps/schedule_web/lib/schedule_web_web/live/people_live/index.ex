@@ -21,13 +21,19 @@ defmodule ScheduleWebWeb.PeopleLive.Index do
     PeopleView.render("index.html", assigns)
   end
 
-  def handle_event("update_month", %{"year"=> year, "month"=> month, "r_start" => r_start, "r_end" => r_end}, socket) do
+  def handle_event("update_month", %{"year"=> year, "month"=> month, "r_start" => r_start,
+                                   "r_end" => r_end, "ordinary" => ordinary}, socket) do
     date = Date.from_iso8601!("#{year}-#{month}-01")
     if r_start != "" && r_end !="" do
       start_day = Date.from_iso8601!(("#{year}-#{month}-#{r_start}"))
       end_day = Date.from_iso8601!(("#{year}-#{month}-#{r_end}"))
       should_be_removed = Schedule.Month.generate_continuous_reserve(start_day, end_day)
-    Schedule.MonthServer.set_this_month(date, [], [], should_be_removed)
+      if ordinary == "" do
+        Schedule.MonthServer.set_this_month(date, [], [], should_be_removed)
+      else
+        set_ordinary = Date.from_iso8601!(("#{year}-#{month}-#{ordinary}"))
+        Schedule.MonthServer.set_this_month(date, [], [set_ordinary], should_be_removed)
+      end
     else
     Schedule.MonthServer.set_this_month(date)
     end
